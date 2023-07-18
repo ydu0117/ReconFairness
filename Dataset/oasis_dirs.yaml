@@ -1,0 +1,3 @@
+data_path: /remote/rds/groups/idcom_imaging/data/Brain/OASIS/oasis_cross_sectional_data/
+list_path: Dataset/oasis_unbalanced
+log_path: log/
