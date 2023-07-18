@@ -5,13 +5,45 @@ import pytorch_lightning as pl
 import torch
 import csv
 import os
+import random
 import sys
 sys.path.append('..')
 from data import SliceDataset, OasisSliceDataset
 
 from typing import Callable, Optional
 
+class BalancedGenderAgeSampler(torch.utils.data.Sampler):
+    def __init__(self, dataset, gender_key, age_key):
+        self.dataset = dataset
+        self.gender_key = gender_key
+        self.age_key = age_key
+        self.indices = self._get_indices()
 
+    def __iter__(self):
+        # random.shuffle(self.indices)
+        return iter(self.indices)
+
+    def __len__(self):
+        return len(self.indices)
+
+    def _get_indices(self):
+        indices_by_group = {}
+        for index, sample in enumerate(self.dataset):
+            age = sample.metadata[self.age_key]
+            gender = sample.metadata[self.gender_key]
+
+            # Create a tuple of gender and age group
+            gender_age_tuple = (gender, age)
+
+            if gender_age_tuple not in indices_by_group:
+                indices_by_group[gender_age_tuple] = []
+            indices_by_group[gender_age_tuple].append(index)
+
+        indices_by_group = {key: random.sample(value, len(value)) for key, value in indices_by_group.items()}
+        indices = [item for sublist in zip(*(indices for indices in indices_by_group.values())) for item in sublist]
+
+
+        return indices
 class OasisDataModule(pl.LightningDataModule):
 
     def __init__(
@@ -118,9 +150,11 @@ class OasisDataModule(pl.LightningDataModule):
             transform=data_transform,
             sample_rate=sample_rate
         )
+        gender_key = 'Gender'
+        age_key = 'Age'
 
+        # sampler = BalancedGenderAgeSampler(dataset, gender_key, age_key)
         sampler = None
-
         dataloader = torch.utils.data.DataLoader(
             dataset=dataset,
             batch_size=self.batch_size,
@@ -128,6 +162,8 @@ class OasisDataModule(pl.LightningDataModule):
             sampler=sampler,
             shuffle=is_train if sampler is None else False,
         )
+        # for batch in dataloader:
+        #     print(batch)
 
         return dataloader
     # revise
