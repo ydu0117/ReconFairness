@@ -139,7 +139,7 @@ class OasisSliceDataset(torch.utils.data.Dataset):
                 #     continue
                 fname = row[0]
                 metadata = {'Gender': row[1],
-                            'Age': row[2]
+                            'Age': self.age_group(row[2]),
                             }
                 slices = int(row[-1])
                 mid = round(slices/2)
@@ -149,6 +149,18 @@ class OasisSliceDataset(torch.utils.data.Dataset):
                     raw_samples.append(new_raw_sample)
             metalist.close()
         return raw_samples
+
+    def age_group(self, age):
+        # Group age data into three categories
+        young_age = 40
+        old_age = 65
+        if int(age) <= young_age:
+            age_group = 'Y'
+        elif int(age) > old_age:
+            age_group = 'O'
+        else:
+            age_group = 'M'
+        return age_group
 
     def read_raw_data(self, data_path, patient_id, dataslice):
         # read data and select slices based on patient id from data_list
